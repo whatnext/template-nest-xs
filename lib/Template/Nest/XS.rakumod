@@ -48,7 +48,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 
-class Template::NestDl:ver<0.1.1> {
+class Template::Nest::XS:ver<0.1.1> {
     has Str $.template_dir is rw;
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
