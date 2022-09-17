@@ -1,0 +1,18 @@
+{
+    "name": "Template::Nest::XS",
+    "auth" : "zef:andinus",
+    "version": "0.1.0",
+    "license" : "ISC",
+    "description": "Manipulate a generic template structure via a Raku hash",
+    "perl": "6.d",
+    "provides": {
+        "Template::Nest::XS": "lib/Template/Nest/XS.rakumod"
+    },
+    "resources": [
+        "libraries/templatenest"
+    ],
+    "tags": [
+        "Nest", "Template"
+    ],
+    "source-url" : "https://github.com/whatnext/template-nest-xs"
+}
