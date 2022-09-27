@@ -1,5 +1,32 @@
 use Test;
 
-plan 1;
+plan 2;
 
 use-ok 'Template::Nest::XS';
+
+use Template::Nest::XS;
+
+my $page = {
+		NAME => 'page',
+		contents => [${
+			NAME => 'box',
+			title => 'First nested box'
+		}]
+	};
+
+push @($page<contents>),{
+	NAME => 'box',
+	title => 'Second nested box'
+};
+
+
+my $nest = Template::Nest::XS.new(
+	template_dir => $*PROGRAM.parent.add('tests').Str,
+fixed_indent => True,
+name_label => "NAME"
+);
+#say "here";
+my $result= $nest.render( $page );
+
+ok  ($result~~rx:s/First nested box/).so,"example page rendering ok";
+#say "here1";

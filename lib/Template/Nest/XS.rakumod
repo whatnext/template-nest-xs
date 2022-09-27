@@ -6,6 +6,7 @@ constant dl = 'TemplateNestDll.dll';
 
 sub get_dll_name()
 {
+
     return %?RESOURCES<libraries/templatenest>;
 
      if $*VM.osname eq 'linux' {
@@ -92,18 +93,19 @@ class Template::Nest::XS:ver<0.1.1> {
 
         my Pointer[Str] $html = Pointer[Str].new();
         my Pointer[Str] $err = Pointer[Str].new();
+      
         templatenest_render($class_pointer,$comp.raku,$html,$err);
 	    if $err.deref {
-          die "there is an error in dynamic library:$err";
+          die "there is an error in dynamic library:{$err.deref}";
         }
-        if !$html.deref {
+        #if !$html.deref || $html.deref=="" {
            my Pointer[Str] $err2 = Pointer[Str].new();
            get_error($class_pointer,$err2);
            if ($err2.deref)
 	       {
 	          die "there is an error during execution:{$err2.deref}";
 	       }
-        }
+        #}
         return $html.deref;
     }
 
