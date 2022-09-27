@@ -1,6 +1,6 @@
 {
     "name": "Template::Nest::XS",
-    "auth" : "zef:andinus",
+    "auth" : "zef:jaffa4",
     "version": "0.1.0",
     "license" : "ISC",
     "description": "Manipulate a generic template structure via a Raku hash",
