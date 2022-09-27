@@ -6,3 +6,14 @@ This version works only on Linux and on Windows. It gets ~libtemplatenest.so~ / 
 ~libraries~ directory. So, the C++ code must be re-compiled and
 ~libtemplatenest.so~ replaced on updates.
 
+The dynamic library can be compiled from its sources when it needed.
+It is possible to compile them using Visual Studio by opening the solution file.
+See https://github.com/whatnext/template-nest-xs/tree/main/resources/libraries/src
+After compilation , rename the dll and move it to the resources/libraries directory.
+
+For Linux,
+there is a script for compiling called compile.sh. 
+It is found it at https://github.com/whatnext/template-nest-xs/tree/main/resources/libraries/src/TemplateNestDll.
+
+
+
