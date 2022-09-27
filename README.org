@@ -1,6 +1,6 @@
 #+title: Template::Nest::XS
 
-Repository for XS version of Template::Nest with Raku bindings.
+Repository for XS version of Template::Nest with Raku bindings. Is is very fast , up to 100x faster than Raku version.
 
 This version works only on Linux and on Windows. It gets ~libtemplatenest.so~ / ~templatenest.dll~ from
 ~libraries~ directory. So, the C++ code must be re-compiled and
