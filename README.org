@@ -2,6 +2,7 @@
 
 Repository for XS version of Template::Nest with Raku bindings.
 
-This version works only on Linux. It gets ~libtemplatenest.so~ from
+This version works only on Linux and on Windows. It gets ~libtemplatenest.so~ / ~templatenest.dll~ from
 ~libraries~ directory. So, the C++ code must be re-compiled and
 ~libtemplatenest.so~ replaced on updates.
+
