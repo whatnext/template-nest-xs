@@ -36,10 +36,10 @@ class TemplateNestClass
     //has Str $.template_ext is rw = '.html';
     string template_ext = ".html";
     //has% .template_hash is rw;
-    unordered_map<string, string> template_hash;
+    defvaltype template_hash;
 
     //has% .defaults is rw;
-    unordered_map<string, defvaltype> defaults;
+    defvaltype defaults;
     //subset Char of Str where.chars == 1 || .chars == 0;
 
     //has Char $.defaults_namespace_char is rw = '.';
@@ -70,6 +70,8 @@ class TemplateNestClass
     string conv_error = "";
     string output = "";
 
+    string rendertop(const defvaltype& comp);
+
     string render(const defvaltype & comp);
     string render_hash(unordered_map<string, defvaltype> h);
     string render_array(vector<defvaltype> arr);
@@ -80,7 +82,7 @@ class TemplateNestClass
     vector<string> params(string template_name);
     vector<string> params_in(string text);
     
-    string get_default_val(const unordered_map<string, defvaltype>& def, vector<string> parts);
+    string get_default_val(const  defvaltype& def, vector<string> parts);
     bool token_regex(const string& param_name, const string& text, size_t& p0, size_t& p, bool fixed_pos, bool& found);
     string & died();
    

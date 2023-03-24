@@ -6,6 +6,8 @@
 
 defvaltype convert_text(const char* text, string& error);
 
+defvaltype convert_jsontext(const char* text, string& error);
+
 /*my $page = {
 		NAME => 'page',
 		contents => [{
@@ -62,6 +64,42 @@ void rendertest2()
     int b = 4;
 }
 
+void pythonrender()
+{
+    auto o = new TemplateNestClass();
+    string error;
+    o->template_dir = R"(D:\m\python\templatenest\template-nestdll-1.0.0\template_nestdll\tests\templates)";
+    o->fixed_indent = false;
+    o->name_label = "NAME";
+    o->token_delims[0] = "<%";
+    o->token_delims[1] = "%>";
+    string data = "{\"NAME\": \"page\", \"contents\": [{\"NAME\": \"box\", \"title\": \"First nested box\"}, {\"NAME\": \"box\", \"title\": \"Second nested box\"}]}";
+    defvaltype v = convert_jsontext(data.c_str(), error);
+    string rendered_script = o->render(v);
+
+    std::cout << rendered_script << "\n";
+}
+
+void pythontestbadparams()
+{
+    
+
+    auto o = new TemplateNestClass();
+    string error;
+    o->template_dir = R"(D:\m\python\templatenest\template-nestdll-1.0.0\template_nestdll\tests\templates)";
+    o->fixed_indent = false;
+    o->name_label = "NAME";
+    o->token_delims[0] = "<%";
+    o->token_delims[1] = "%>";
+    string data = R"({ "NAME": "table", "rows" : [{"NAME": "tr", "cols" : {"NAME": "tr", "bad_param" : "stuff"}}, { "NAME": "tr", "cols" : {"NAME": "td"} }] })";
+    o->die_on_bad_params = true;
+    defvaltype v = convert_jsontext(data.c_str(), error);
+    string rendered_script = o->rendertop(v);
+
+    std::cout << o->die << "\n";
+
+}
+
 void test()
 {
     /* my %table =
@@ -86,11 +124,24 @@ void test()
     
 }
 
+void jsontest()
+{
+    string error;
+   
+
+
+    defvaltype v = convert_jsontext("{\"NAME\": \"page\", \"contents\": [{\"NAME\": \"box\", \"title\": \"First nested box\"}, {\"NAME\": \"box\", \"title\": \"Second nested box\"}]}", error);
+    std::cout << "errpr " << error << "\n";
+}
+
+
 int main()
 {
     //test();
+   // jsontest();
+    //pythonrender();
     rendertest2();
-    std::cout << "Hello World!\n";
+   // pythontestbadparams();
 }
 
 

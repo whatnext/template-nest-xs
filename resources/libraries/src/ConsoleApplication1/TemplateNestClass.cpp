@@ -6,12 +6,231 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <iostream>
+#include "rapidjson/reader.h"
 
-string set_parse_error(const char* text, char* pos, string message)
+string set_parse_error(const char* text, const char* pos, string message)
 {
     string out;
     out = string(text).substr(0, pos-text) + "<<:" + message;
     return out;
+}
+using namespace std;
+using namespace rapidjson;
+
+#ifdef DEBUGJSON
+constexpr bool debug_mode = true;
+#else
+constexpr bool debug_mode = false;
+#endif
+
+struct JsonHandler {
+    StringStream* ss;
+    defvaltype root;
+    vector<int> stack;
+    enum {
+        hash,
+        array,
+        str,
+        invalue,
+        invalue2
+    };
+    vector<string> key;
+    vector<defvaltype*> tree;
+    string error;
+    char* text;
+
+    JsonHandler()
+    {
+        tree.push_back(&root);
+    }
+
+    bool HandleValue(const string& val)
+    {
+       
+        if (stack.back() == array)
+        {
+            defvaltype v;
+            v.val = val;
+            (*tree.back()->array).push_back(v);
+          
+        }
+        else
+        {
+            defvaltype v;
+            v.val = val;
+            (*tree.back()->level)[key.back()] = v;
+            key.pop_back();
+
+            stack.pop_back();
+        }
+        return true;
+
+    }
+
+    bool Null() { HandleValue("null");  if constexpr (debug_mode)  cout << "Null()" << endl;
+    return true; }
+    bool Bool(bool b) { HandleValue(b? "true":"false");   if constexpr (debug_mode) cout << "Bool(" << boolalpha << b << ")" << endl;
+    return true; }
+    bool Int(int i) { HandleValue(std::to_string(i));  if constexpr (debug_mode) cout << "Int(" << i << ")" << endl;
+    return true; }
+    bool Uint(unsigned u) { HandleValue(std::to_string(u));  if constexpr (debug_mode) cout << "Uint(" << u << ")" << endl;
+    return true; }
+    bool Int64(int64_t i) { HandleValue(std::to_string(i));  if constexpr (debug_mode) cout << "Int64(" << i << ")" << endl;
+    return true; }
+    bool Uint64(uint64_t u) { HandleValue(std::to_string(u));  if constexpr (debug_mode) cout << "Uint64(" << u << ")" << endl;
+    return true; }
+    bool Double(double d) { HandleValue(std::to_string(d));  if constexpr (debug_mode)  cout << "Double(" << d << ")" << endl;
+    return true; }
+    bool RawNumber(const char* str, SizeType length, bool copy) {
+        HandleValue(str);
+        if constexpr (debug_mode) cout << "Number(" << str << ", " << length << ", " << boolalpha << copy << ")" << endl;
+        return true;
+    }
+    bool String(const char* str, SizeType length, bool copy) {
+        HandleValue(str);
+        if constexpr (debug_mode)  cout << "String(" << str << ", " << length << ", " << boolalpha << copy << ")" << endl;
+        return true;
+    }
+    bool StartObject() {
+        if (stack.size() == 0)
+            tree.back()->level = make_shared < unordered_map<string, defvaltype> >();
+        else
+        {
+            if (stack.back() == array)
+            {
+                defvaltype v2;
+                v2.level = make_shared<unordered_map<string, defvaltype> >();
+                tree.back()->array->push_back(v2);
+                tree.push_back(&tree.back()->array->back());
+            }
+            else  if (stack.back() == invalue || stack.back() == invalue2)
+            {
+                defvaltype v2;
+                v2.level = make_shared<unordered_map<string, defvaltype> >();
+                (*tree.back()->level)[key.back()] = v2;
+                tree.push_back(&(*tree.back()->level)[key.back()]);
+                stack.pop_back();
+                key.pop_back();
+
+
+            }
+            else
+            {
+                error = set_parse_error(ss->head_, ss->src_, "${ is in bad context");
+                return false; // error
+
+            }
+
+        }
+        stack.push_back(hash);
+        
+        if constexpr (debug_mode)  cout << "StartObject()" << endl; return true; }
+    bool Key(const char* str, SizeType length, bool copy) {
+
+        // we have key value at this point
+        key.push_back(str);
+        if (stack.empty())
+        {
+            error = set_parse_error(ss->head_, ss->src_, "without context, expecting it inside hash");
+            return false; // error
+        }
+        if (stack.back() != hash)
+        {
+            error = set_parse_error(ss->head_, ss->src_, "in bad context, expecting it inside hash");
+            return false; // error
+        }
+        stack.push_back(invalue);
+        if constexpr (debug_mode)   cout << "Key(" << str << ", " << length << ", " << boolalpha << copy << ")" << endl;
+        return true;
+    }
+    bool EndObject(SizeType memberCount) { 
+        if (stack.empty())
+        {
+            error = set_parse_error(ss->head_, ss->src_, "} without context, expecting it inside hash");
+            return false; // error
+        }
+        if (stack.back() == invalue2)
+        {
+            stack.pop_back();
+        }
+        else if (stack.back() != hash)
+        {
+            error = set_parse_error(ss->head_, ss->src_, "} in bad context, expecting it inside hash");
+            return false; // error
+        }
+        stack.pop_back();
+        tree.pop_back();
+        
+        
+        if constexpr (debug_mode)  cout << "EndObject(" << memberCount << ")" << endl; return true; }
+    bool StartArray() { 
+        if (stack.size() == 0)
+            tree.back()->array = make_shared < vector<defvaltype> >();
+        else
+        {
+            if (stack.back() == array)
+            {
+                defvaltype v2;
+                v2.array = make_shared<vector<defvaltype> >();
+                tree.back()->array->push_back(v2);
+                tree.push_back(&tree.back()->array->back());
+            }
+            else  if (stack.back() == invalue || stack.back() == invalue2)
+            {
+                defvaltype v2;
+                v2.array = make_shared<vector<defvaltype> >();
+                (*tree.back()->level)[key.back()] = v2;
+                tree.push_back(&(*tree.back()->level)[key.back()]);
+                key.pop_back();
+
+
+            }
+            else
+            {
+                error = set_parse_error(ss->head_, ss->src_, "$[ is in bad context");
+                return false; // error
+
+            }
+
+        }
+        stack.push_back(array);
+        
+        if constexpr (debug_mode)   cout << "StartArray()" << endl; return true; }
+    bool EndArray(SizeType elementCount) {
+        if (stack.empty())
+        {
+            error = set_parse_error(ss->head_, ss->src_, "] without context, expecting it inside list");
+            return false; // error
+        }
+        if (stack.back() != array)
+        {
+            error = set_parse_error(ss->head_, ss->src_, "] in bad context, expecting it inside list");
+            return false; // error
+        }
+     
+        stack.pop_back();
+        if (stack.back() == invalue)
+            stack.pop_back();
+        tree.pop_back();
+        
+        if constexpr (debug_mode)       cout << "EndArray(" << elementCount << ")" << endl; return true; }
+};
+
+defvaltype convert_jsontext(const char* text, string& error)
+{
+    
+    error = "";
+
+    JsonHandler handler;
+    Reader reader;
+    StringStream ss(text);
+    handler.ss = &ss;
+    reader.Parse(ss, handler);
+
+    return handler.root;
+
+
 }
 
 defvaltype convert_text(const char* text,string & error)
@@ -362,6 +581,20 @@ defvaltype convert_text(const char* text,string & error)
         return $html;
     }*/
 
+string TemplateNestClass::rendertop(const defvaltype& comp)
+{
+    
+    try
+    {
+        return render(comp);
+    }
+    catch (string & message)
+    {
+       // die = message;
+        return "";
+    }
+}
+
 string TemplateNestClass::render(const defvaltype& comp)
 {
     //self.comment_delims = @comment_delims_defaults unless grep{ $_ }, @!comment_delims;
@@ -419,6 +652,7 @@ string TemplateNestClass::render_hash(unordered_map<string, defvaltype> h) {
     if (template_name.empty())
     {
         die = "Encountered hash with no name_label(\"" + name_label + "\")";
+        throw string(die);
         return "";
     }
 
@@ -514,8 +748,19 @@ string TemplateNestClass::get_template(string template_name) {
     
 
     string template1 = "";
-    if (template_hash.size()!=0) {
-        template1 = template_hash.at(template_name);
+    if (template_hash.level!=nullptr && (*template_hash.level).size()!=0) {
+        try {
+            defvaltype v = (*template_hash.level).at(template_name);
+            if (v.array == nullptr && v.level == nullptr)
+                template1 = v.val;
+        }
+        catch (std::out_of_range& r)
+        {
+            die = "template_hash does not have this key:" + template_name;
+            throw string(die);
+        }
+
+       
     }
     else {
         auto p = std::filesystem::path(template_dir) / (template_name+ template_ext);
@@ -528,8 +773,16 @@ string TemplateNestClass::get_template(string template_name) {
         if (t.fail())
         {
             char buf[1000];
+            char* err = buf;
+#ifdef __linux__
+#define strerror_s strerror_r
+           err = strerror_r(errno, buf, sizeof(buf));
+#else
             strerror_s(buf, 1000, errno);
-            die = "could not open " + filename + " reason:" + buf;
+#endif
+           
+            die = "could not open " + filename + " reason:" + err;
+            throw string(die);
             return "";
         }
         std::stringstream buffer;
@@ -681,7 +934,8 @@ vector<string> TemplateNestClass::params(string template_name) {
             }
 
             if self.die_on_bad_params and not $replaced  {
-                die "Could not replace template param '$param_name': token does not exist in template '$template_name'";
+                die="Could not replace template param '$param_name': token does not exist in template '$template_name'";
+                throw string(die);
             }
         }
 
@@ -804,6 +1058,7 @@ string & TemplateNestClass::died()
 string replace_all(const string& s, const string& r, const string & replacement)
 {
     string res;
+    res.reserve(s.size() * 2);
     auto p = s.find(r);
     size_t p0 = 0;
     if (p == string::npos)
@@ -962,6 +1217,7 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
         }
         if (die_on_bad_params && ! replaced) {
                die = "Could not replace template param '"+param_name+"': token does not exist in template '"+template_name+"'";
+               throw std::string(die);
                return "";
         }
 
@@ -973,7 +1229,7 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
     for (auto& f : frags) {
         //say "for frags keys";
 
-        if (defaults.size()!=0) {
+        if (defaults.level!=nullptr) {
             vector<string> rem = params_in(f);
             //say "defaults rem: " ~Dump(@rem);
             const string & char1 = defaults_namespace_char;
@@ -1178,24 +1434,24 @@ string shift(vector<string>& v) {
 }
 
 
-string TemplateNestClass::get_default_val(const unordered_map<string, defvaltype> & def, vector<string> parts)
+string TemplateNestClass::get_default_val(const defvaltype & def, vector<string> parts)
 {
     if (parts.size() == 1)
     {
-        auto f = def.find(parts[0]);
-        string val = f != def.end() ? f->second.val : "";
+        auto f = def.level->find(parts[0]);
+        string val = f != def.level->end() ? f->second.val : "";
         return val;
     }
     else {
         string ref_name = shift (parts);
 
-        auto new_def = def.find(ref_name);
+        auto new_def = def.level->find(ref_name);
         //my% new_def = % def{ $ref_name };
-        if (new_def==def.end() || new_def->second.level==nullptr || new_def->second.level->size() == 0)
+        if (new_def== def.level->end() || new_def->second.level==nullptr || new_def->second.level->size() == 0)
             return "";
 
         //return '' unless % new_def;
-        return get_default_val(*(new_def->second.level), parts);
+        return get_default_val((new_def->second), parts);
     }
 
 

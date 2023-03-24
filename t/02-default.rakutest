@@ -1,0 +1,111 @@
+use Test;
+
+plan 5;
+
+use lib '../lib';
+
+use-ok 'Template::Nest::XS';
+
+use Template::Nest::XS;
+
+my $root = {
+            "table_default"=> {
+                "NAME"=> "table",
+                "rows"=> [{
+                    "NAME"=> "tr_default",
+                    "cols"=> {
+                        "NAME"=> "td",
+                        "contents"=> 1
+                    }
+                }, {
+                    "NAME"=> "tr_default",
+                    "cols"=> {
+                        "NAME"=> "td",
+                        "contents"=> 2
+                    }
+                }]
+            },
+            "table_default_ns"=> {
+                "NAME"=> "table",
+                "rows"=> [{
+                    "NAME"=> "tr_default_ns",
+                    "cols"=> {
+                        "NAME"=> "td",
+                        "contents"=> 1
+                    }
+                }, {
+                    "NAME"=> "tr_default_ns",
+                    "cols"=> {
+                        "NAME"=> "td",
+                        "contents"=> 2
+                    }
+                }]
+            }
+        };
+
+
+my $nest = Template::Nest::XS.new(
+	template_dir => $*PROGRAM.parent.add('tests').Str,
+fixed_indent => True,
+name_label => "NAME",
+token_delims => [ "<!--%","%-->" ],
+);
+
+
+#say "here";
+$nest.defaults =  { 'col1' =>  'default' };
+my $result= $nest.render( $root<table_default> );
+$result .=subst(/\s+/, "",:g);
+#say $result;
+say $result;
+ok  $result eq '<table><tr><td>default</td><td>1</td></tr><tr><td>default</td><td>2</td></tr></table>' ,"non-namespaced ok";
+#say "here1";
+
+
+$nest.defaults =  { };
+$result= $nest.render( $root<table_default_ns> );
+
+$result .=subst(/\s+/, "",:g);
+
+ok  $result eq '<table><tr><td></td><td>1</td></tr><tr><td></td><td>2</td></tr></table>' ,"namespaced no defaults ok";
+
+$nest.defaults =  { "default" => { "col1" => "default" } };
+
+$result= $nest.render( $root<table_default_ns> );
+
+$result .=subst(/\s+/, "",:g);
+
+
+ok  $result eq '<table><tr><td>default</td><td>1</td></tr><tr><td>default</td><td>2</td></tr></table>' ,"namespaced with defaults ok";
+
+
+
+$nest.defaults = {
+            "ordinary_default"=> 'ORD',
+            "config"=> {
+                "default1"=> 'CONF1',
+                "default2"=> 'CONF2',
+                "default3"=> 'CONF3',
+                "nested"=> {
+                    "iexist"=> 'NEST1',
+                    "metoo"=> 'NEST2'
+                }
+            }
+        }
+
+        my $page = {
+            "NAME"=> 'nested_default_outer',
+            "contents"=> {
+                "NAME"=> 'nested_default_contents',
+                "non_config_var"=> 'NONCONF'
+            }
+        }
+
+
+$result= $nest.render( $page);
+$result .=subst(/\s+/, "",:g);
+
+ok  $result eq '<div>CONF2<span><h1>ORD</h1><div>CONF1</div><h4>NONCONF</h4><span>CONF2</span><h2>NEST1</h2><h3></h3></span><div>NEST1</div></div>' ,"complex defaults ok";
+
+
+

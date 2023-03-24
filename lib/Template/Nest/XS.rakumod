@@ -6,8 +6,10 @@ constant dl = 'TemplateNestDll.dll';
 
 sub get_dll_name()
 {
-
-    return %?RESOURCES<libraries/templatenest>;
+   my $dir = %?RESOURCES<libraries/templatenest>.IO.dirname;
+  # say %?RESOURCES<libraries/libtemplatenest>.raku;
+    return $dir.IO.add('templatenest');
+  #  return %?RESOURCES<libraries/templatenest>;
 
      if $*VM.osname eq 'linux' {
         return 'templatenest';
@@ -33,7 +35,7 @@ sub templatenest_init(Pointer is rw) is native(get_dll_name) { * }
 #	char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char);
 
 
-sub templatenest_set_parameters(Pointer $object, Str $template_dir, Str $template_ext, Str $defaults_namespace_char, CArray[Str] $comment_delims,
+sub templatenest_set_parameters(Pointer $object,  Str $defaults, Str $template_dir, Str $template_ext,  Str $template_hash, Str $defaults_namespace_char, CArray[Str] $comment_delims,
 	CArray[Str] $token_delims, int64 $show_labels, Str $name_label, int64 $fixed_indent, int64 $die_on_bad_params, Str $escape_char) is native(get_dll_name) { * }
 
 # void templatenest_render(void * object,char* data,char ** err)
@@ -81,6 +83,7 @@ class Template::Nest::XS:ver<0.1.1> {
 
     method render ( $comp ){
 
+	
         my @comment_delims := CArray[Str].new;
 	    @comment_delims[0]  = $.comment_delims[0];
 	    @comment_delims[1]  = $.comment_delims[1];
@@ -88,13 +91,17 @@ class Template::Nest::XS:ver<0.1.1> {
         my @token_delims := CArray[Str].new;
 	    @token_delims[0]  = $.token_delims[0];
 	    @token_delims[1]  = $.token_delims[1];
-        templatenest_set_parameters($class_pointer, $.template_dir, $.template_ext, $.defaults_namespace_char, @comment_delims,
+
+
+        templatenest_set_parameters($class_pointer, $(%.defaults).raku,$.template_dir, $.template_ext, $(%.template_hash).raku ,$.defaults_namespace_char, @comment_delims,
 	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char);
+
 
         my Pointer[Str] $html = Pointer[Str].new();
         my Pointer[Str] $err = Pointer[Str].new();
-      
+ 
         templatenest_render($class_pointer,$comp.raku,$html,$err);
+
 	    if $err.deref {
           die "there is an error in dynamic library:{$err.deref}";
         }
@@ -113,6 +120,51 @@ class Template::Nest::XS:ver<0.1.1> {
     submethod DESTROY {
 	    templatenest_destroy($class_pointer);
 
+    }
+
+
+    method !get_template( Str $template_name ){
+        #say "get template";
+
+        my $template = '';
+        if self.template_hash {
+            $template = self.template_hash{$template_name};
+        } else {
+
+            my $filename = self.template_dir.IO.add(
+                $template_name ~ self.template_ext
+            );
+
+            $template = slurp $filename;
+
+        }
+
+        $template ~~ s/\n$//;
+        return $template;
+    }
+
+    method params( $template_name ){
+        #say "params";
+
+        my $esc = self.escape_char;
+        my $template = self!get_template( $template_name );
+        my @frags = $template.split( /$esc$esc/ );
+        my $tda = self.token_delims[0];
+        my $tdb = self.token_delims[1];
+
+        my %rem;
+        for @frags.keys -> $i {
+            my @f = @frags[$i] ~~ m:g/<!after $esc> $tda <(.*?)> $tdb/;
+            for @f -> $f {
+                my Str $elem = $f.Str;
+                $elem ~~ s/^\s*//;
+                $elem ~~ s/\s*$//;
+                %rem{$elem} = True;
+            }
+        }
+
+        my @params = %rem.keys.sort;
+        return @params;
     }
 
 

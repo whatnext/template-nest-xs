@@ -1,0 +1,53 @@
+use Test;
+
+plan 6;
+
+
+use lib '../lib';
+use Template::Nest::XS;
+
+
+
+
+my $nest = Template::Nest::XS.new(
+	template_dir => $*PROGRAM.parent.add('tests').Str,
+fixed_indent => True,
+name_label => "NAME",
+token_delims => [ "<!--%","%-->" ],
+ defaults_namespace_char => ''
+);
+
+
+
+my %templates = (
+    'table' => [ "rows" ],
+    'tr' => [ 'cols' ],
+    'td' => [ 'contents' ],
+    'tr_default' => [ 'col1', 'cols' ],
+    'nested_default_outer' => [
+          'config.default2',
+          'config.nested.iexist',
+          'contents'
+    ],
+    'nested_default_contents' => [
+          'config.default1',
+          'config.default2',
+          'config.nested.idontexist',
+          'config.nested.iexist',
+          'non_config_var',
+          'ordinary_default'
+    ]
+);
+
+
+for %templates.keys -> $template {
+
+    my $params = $nest.params( $template );
+
+    is-deeply($params, %templates{$template}, "params in $template");
+
+}
+
+
+
+
