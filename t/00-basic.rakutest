@@ -2,7 +2,7 @@ use Test;
 
 plan 70;
 
-#u#e lib '../lib';
+use lib '../lib';
 
 use-ok 'Template::Nest::XS';
 

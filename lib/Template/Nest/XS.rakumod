@@ -7,7 +7,7 @@ constant dl = 'TemplateNestDll.dll';
 sub get_dll_name()
 {
    my $dir = %?RESOURCES<libraries/templatenest>.IO.dirname;
-  # say %?RESOURCES<libraries/libtemplatenest>.raku;
+   #say %?RESOURCES<libraries/libtemplatenest>.raku;
     return $dir.IO.add('templatenest');
   #  return %?RESOURCES<libraries/templatenest>;
 
@@ -51,7 +51,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 
-class Template::Nest::XS:ver<0.1.1> {
+class Template::Nest::XS:ver<0.1.3> {
     has Str $.template_dir is rw;
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
