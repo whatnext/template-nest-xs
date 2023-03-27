@@ -1,1 +1,1 @@
-g++ -fPIC -std=c++17 -shared connector.cpp -O3 -I ../ConsoleApplication1/ ../ConsoleApplication1/TemplateNestClass.cpp -lstdc++fs -o ../../../python/templatenest/template-nestdll-1.0.0/template_nestdll/templatenest.so
+g++ -fPIC -std=c++17 -shared connector.cpp -O3 -I ../ConsoleApplication1/ ../ConsoleApplication1/TemplateNestClass.cpp -lstdc++fs -o ../../../../resources/libraries/libtemplatenest.so

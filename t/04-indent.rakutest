@@ -81,6 +81,8 @@ my $html = $nest.render( $table );
 my $html_sq = $nest_sq.render( $table_sq );
 
 is( $html, $x_html, "fixed_indent = 0" );
+$html_sq ~~ s:g/\r\n/\n/;
+$x_html ~~ s:g/\r\n/\n/;
 is( $html_sq, $x_html, "fixed_indent = 0, square token delims" );
 
 $nest.fixed_indent = True;
@@ -100,6 +102,13 @@ $x_html = "<table>
 
 $html = $nest.render( $table );
 $html_sq = $nest_sq.render( $table_sq );
-
+say $html.raku;
+$html ~~ s:g/\r\n/\n/;
+say $html.raku;
+$x_html  ~~ s:g/\r\n/\n/;
+$html_sq ~~ s:g/\r\n/\n/;
+say $x_html.raku;
 is( $html, $x_html, "fixed_indent = 1" );
 is( $html_sq, $x_html, "fixed_indent = 1, square token delims");
+
+

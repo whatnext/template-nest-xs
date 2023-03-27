@@ -12,7 +12,7 @@
 #define TEMPLATENEST_API
 #endif
 
-//#include <cstdint>
+#include <cstdint>
 
 extern  "C"  TEMPLATENEST_API  void templatenest_init(void * * object);
 extern  "C"  TEMPLATENEST_API  void templatenest_set_parameters(void* object, char* defaults, char* template_dir, char* template_ext, char* template_hash,char* defaults_namespace_char, char** comment_delims,
