@@ -40,7 +40,7 @@
 	  has Pointer $class_pointer = Pointer.new();*/
 	
 	  void templatenest_set_parameters(void* object, char * defaults, char * template_dir,char * template_ext, char* template_hash, char * defaults_namespace_char,char** comment_delims,
-		   char** token_delims,int64_t show_labels, char * name_label, int64_t fixed_indent, int64_t die_on_bad_params, char * escape_char)
+		   char** token_delims,int64_t show_labels, char * name_label, int64_t fixed_indent, int64_t die_on_bad_params, char * escape_char, int64_t indexes)
 		  
 	  {
 	  TemplateNestClass & c = *((TemplateNestClass*)object);
@@ -66,12 +66,12 @@
 	  c.fixed_indent = fixed_indent;
 	  c.die_on_bad_params = die_on_bad_params;
 	  c.escape_char = escape_char;
-
+	  c.indexes = indexes;
 	  }
 
 
 	  void templatenest_set_jsonparameters(void* object, char* defaults, char* template_dir, char* template_ext, char * template_hash,char* defaults_namespace_char, char** comment_delims,
-		  char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char)
+		  char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char, int64_t indexes)
 
 	  {
 		  TemplateNestClass& c = *((TemplateNestClass*)object);
@@ -98,6 +98,7 @@
 		  c.fixed_indent = fixed_indent;
 		  c.die_on_bad_params = die_on_bad_params;
 		  c.escape_char = escape_char;
+		  c.indexes = indexes;
 
 	  }
 	  

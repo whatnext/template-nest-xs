@@ -1,7 +1,7 @@
 {
     "name": "Template::Nest::XS",
     "auth" : "zef:jaffa4",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "license" : "ISC",
     "description": "Manipulate a generic template structure via a Raku hash",
     "perl": "6.d",

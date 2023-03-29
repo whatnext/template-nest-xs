@@ -65,10 +65,28 @@ class TemplateNestClass
     //has Char $.escape_char is rw = '\\';
     string escape_char  = "\\";
 
+
+    
+
+    bool indexes = false;
     string die = "";
 
     string conv_error = "";
     string output = "";
+    struct param_locations_type
+    {
+        size_t p0;
+        size_t p;
+        string name;
+
+    };
+    struct location_info {
+
+        string escape_char;
+        vector<vector<param_locations_type> > loc;
+    };
+    unordered_map<string, location_info > param_locations;
+   
 
     string rendertop(const defvaltype& comp);
 
@@ -83,7 +101,7 @@ class TemplateNestClass
     vector<string> params_in(string text);
     
     string get_default_val(const  defvaltype& def, vector<string> parts);
-    bool token_regex(const string& param_name, const string& text, size_t& p0, size_t& p, bool fixed_pos, bool& found);
+    bool token_regex(string& param_name, const string& text, size_t& p0, size_t& p, bool fixed_pos, bool& found);
     string & died();
    
     

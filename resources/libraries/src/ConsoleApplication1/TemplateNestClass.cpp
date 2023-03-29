@@ -778,7 +778,7 @@ string TemplateNestClass::get_template(string template_name) {
 #define strerror_s strerror_r
            err = strerror_r(errno, buf, sizeof(buf));
 #else
-            strerror_s(buf, 1000, errno);
+          strerror_s(buf, 1000, errno);
 #endif
            
             die = "could not open " + filename + " reason:" + err;
@@ -1104,32 +1104,94 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
 
     string esc = escape_char;
     vector<string> frags;
-
+   
+    
     if (!esc.empty()){
         frags = split(template1, esc+esc );
+       
     }
     else {
         frags.push_back(template1);
        
     }
 
+   
+
+    unordered_map<string, bool> params_replaced;
     for (auto& kv : params)
     {
-        const string& param_name = kv.first;
+        params_replaced[kv.first] = false;
+      
+    }
+
+    
+
+   // for (auto& kv : params)
+    {
+     //   const string& param_name = kv.first;
 
 
-        const string& param_val = kv.second;
+     //   const string& param_val = kv.second;
 
-        bool replaced = false;
+        auto iter = param_locations.find(template_name);
 
-        if (fixed_indent) { //if fixed_indent we need to add spaces during the replacement
+        if (iter == param_locations.end() || ! indexes  || iter->second.escape_char != esc)
+        {
+            int i = 0;
+            
+            param_locations[template_name] = location_info();
+            location_info & locations = param_locations[template_name];
+            locations.escape_char = esc;
+           
             for (auto& f : frags) {
+                vector<param_locations_type> locationsinfrag;
+               
+                size_t p = 0;
+                while (f.size() > p)
+                {
+                    bool found;
+                    size_t p0;
+                    string param_name_found;
+                    if (!token_regex(param_name_found, f, p0, p, false, found))
+                        break;
+                    if (found)
+                    {
+                        param_locations_type l;
+                        l.p0 = p0;
+                        l.p = p;
+                        l.name = std::move(param_name_found);
+                            
+                        locationsinfrag.push_back(l);
+                    }
+                }
+
+
+
+                locations.loc.push_back(std::move(locationsinfrag));
+                i++;
+
+            }
+        }
+        location_info & locations = param_locations[template_name];
+        if (fixed_indent) { //if fixed_indent we need to add spaces during the replacement
+            int fragno = 0;
+            bool replaced = false;
+            for (auto& f : frags) {
+               
+                string fragout;
+                fragout.reserve(f.size()*2);
+                size_t copied_until = 0;
+               
+
                 //for @frags.keys->$i {
 
                 size_t p = 0;
 
                 // my Regex $rx = self!token_regex($param_name);
                  //my Match @spaces_repl = @frags[$i] ~~m:g / (<-[\S\r\n]>*) < $rx > / ;
+
+                const vector<param_locations_type>& locationsinfrag = locations.loc [fragno] ;
+                int locationno = 0;
                 while (f.size() > p)
                 {
                     //size_t p0 = p;
@@ -1138,9 +1200,36 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
                     //string sp = f.substr(p0, p1 - p0);
                     bool found;
                     size_t p0;
-                    if (!token_regex(param_name, f, p0,p, false,found))
+                   
+
+
+                    if (locationsinfrag.size() == locationno)
                         break;
-                    if (found)
+                    const param_locations_type& loc = locationsinfrag[locationno];
+
+                    p0 = loc.p0;
+                    p = loc.p;
+                    const string & param_name_found = loc.name;
+
+                   // if (!token_regex(param_name_found, f, p0,p, false,found))
+                    //    break;
+                    unordered_map<string, string>::const_iterator i;
+                    string defaultval;
+                    if (((i = params.find(param_name_found)) != params.end()))
+                    {
+
+                    }
+                    else if (defaults.level != nullptr) 
+                    {
+                        const string& char1 = defaults_namespace_char;
+                        vector<string> parts = { param_name_found };
+                        if (!char1.empty())
+                            parts = split(param_name_found, char1);
+
+                        defaultval = get_default_val(defaults, parts);
+                      
+                    }
+                   // if (i!= params.end() || !defaultval.empty())
                     {
                         size_t ps = p0;
                         skip_space_backwards(f,ps);
@@ -1149,8 +1238,11 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
                         //say "while";
                         //my Match $repl = shift @spaces_repl;
                         //my Match $sp = $repl.list[0];
+                        const string* param_val = &defaultval;  
+                        if (i != params.end())
+                            param_val = &i->second;
 
-                        string param_out = param_val;
+                        string param_out = *param_val;
                         //say "param out before: " ~$param_out;
                         //$param_out ~~s:g / \n / \n$sp / ;
                         set_indent_all(param_out, sp);
@@ -1165,16 +1257,31 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
                             }
                             else
                             {
+                                if (i != params.end())
+                                {
+                                    params_replaced[param_name_found] = true;
+                                   
+                                }
                                 replaced = true;
-                                f.replace(ps, p - ps, param_out);
-                                p = ps + param_out.size();
+                                fragout += f.substr(copied_until, ps- copied_until) + param_out;
+                                copied_until = p;
+                                //f.replace(ps, p - ps, param_out);
+                                //p = ps + param_out.size();
                             }
                         }
                         else
                         {
+                            if (i != params.end())
+                            {
+                                params_replaced[param_name_found] = true;
+                              
+                            }
                             replaced = true;
-                            f.replace(ps, p - ps, param_out);
-                            p = ps + param_out.size();
+                            fragout += f.substr(copied_until, ps - copied_until) + param_out;
+                            copied_until = p;
+
+                           // f.replace(ps, p - ps, param_out);
+                           // p = ps + param_out.size();
 
                         }
 
@@ -1184,11 +1291,23 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
                           }*/
 
                     }
+                    locationno++;
+                }
+                
+                if (replaced)
+                {
+                    fragout = fragout + f.substr(copied_until, f.size() - copied_until);
+                    f = std::move(fragout);
                 }
 
+                fragno++;
             }
         }
         else {
+            int fragno = 0;
+            bool replaced = false;
+           
+          
             for (auto& f : frags) {
                 //say "for ffk";
                 //my Regex $rx = self!token_regex($param_name);
@@ -1198,35 +1317,100 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
                 //say "param_name: " ~$param_name.Str;
                 //say "m: " ~$m.gist;
                 size_t p = 0;
+                const vector<param_locations_type>& locationsinfrag = locations.loc[fragno];
+                string fragout;
+                fragout.reserve(f.size() * 2);
+                size_t copied_until = 0;
+                int locationno = 0;
+                
+               
                 while (f.size() > p)
                 {
-                    bool found;
+                   
                     size_t p0;
-                    if (!token_regex(param_name, f, p0,p, false,found))
+                   
+                    if (locationsinfrag.size() == locationno)
                         break;
-                    if (found)
+
+                    
+                    const param_locations_type& loc = locationsinfrag[locationno];
+                   
+                    p0 = loc.p0;
+                    p = loc.p;
+
+                   
+                    const string& param_name_found = loc.name;
+                   // if (!token_regex(param_name_found, f, p0,p, false,found))
+                    //    break;
+                    unordered_map<string, string>::const_iterator i;
+                   
+                    if (((i = params.find(param_name_found)) != params.end()))
                     {
+                        params_replaced[param_name_found] = true;
                         replaced = true;
-                        f.replace(p0, p - p0, param_val);
-                        p = p0 + param_val.size();
+                        const string& param_val = i->second;
+                       
+                        fragout += f.substr(copied_until, p0 - copied_until) + param_val;
+                       
+                        copied_until = p;
+                       
+                     
+                       // f.replace(p0, p - p0, param_val);
+                       // p = p0 + param_val.size();
                     }
+                    else
+                    {
+
+                        if (defaults.level != nullptr) {
+                            replaced = true;
+                            const string& char1 = defaults_namespace_char;
+                            vector<string> parts = { param_name_found };
+                            if (!char1.empty())
+                                parts = split(param_name_found, char1);
+
+                            string val = get_default_val(defaults, parts);
+                            fragout += f.substr(copied_until, p0 - copied_until) + val;
+
+                            copied_until = p;
+                        }
+                        else // empty
+                        {
+                            replaced = true;
+                            fragout += f.substr(copied_until, p0 - copied_until);
+
+                            copied_until = p;
+                        }
+
+                    }
+                    locationno++;
+                }
+               
+                if (replaced)
+                {
+                    fragout = fragout + f.substr(copied_until, f.size() - copied_until);
+                    f = std::move(fragout);
                 }
                 //replaced = True if @frags[$i] ~~s:g / <$rx> / $param_val / ;
                 //say "end of ffk";
+                fragno++;
             }
         }
-        if (die_on_bad_params && ! replaced) {
-               die = "Could not replace template param '"+param_name+"': token does not exist in template '"+template_name+"'";
-               throw std::string(die);
-               return "";
-        }
+       
 
     }
+  
+    if (die_on_bad_params)
+        for (auto& kv : params_replaced)
+            if (!kv.second) {
+                die = "Could not replace template param '" + kv.first + "': token does not exist in template '" + template_name + "'";
+                throw std::string(die);
+                return "";
+            }
         
 
     //say "finished for";
 
-    for (auto& f : frags) {
+    /*for (auto& f : frags) {
         //say "for frags keys";
 
         if (defaults.level!=nullptr) {
@@ -1246,9 +1430,10 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
                 {
                     bool found;
                     size_t p0;
-                    if (!token_regex(name, f, p0,p, false,found))
+                    string param_name_found;
+                    if (!token_regex(param_name_found, f, p0,p, false,found))
                         break;
-                    if (found)
+                    if (found && param_name_found== name)
                     {
                         f.replace(p0, p - p0, val);
                         p = p0 + val.size();
@@ -1268,7 +1453,8 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
         {
             bool found;
             size_t p0;
-            if (!token_regex("", f, p0,p, false,found))
+            string param_name_found;
+            if (!token_regex(param_name_found, f, p0,p, false,found))
                 break;
             if (found)
             {
@@ -1278,7 +1464,7 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
         }
         //@frags[$i] ~~s:g / <$rx>//;
         //#say "after frags regex";
-    }
+    }*/
 
         if (!esc.empty()){
             for (auto& f : frags) {
@@ -1288,7 +1474,7 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
             }
         }
 
-    string text = !esc.empty() ? join(frags,esc) :frags[0];
+    const string & text = !esc.empty() ? join(frags,esc) :std::move(frags[0]);
     return text;
 }
 
@@ -1479,13 +1665,13 @@ string TemplateNestClass::get_default_val(const defvaltype & def, vector<string>
 
 
 // returns true if searching can be continued
-bool TemplateNestClass::token_regex(const string& param_name, const string& text, size_t & p0,size_t & p, bool fixed_pos,bool & found)
+bool TemplateNestClass::token_regex(string& param_name, const string& text, size_t & p0,size_t & p, bool fixed_pos,bool & found)
 {
     const string & esc = escape_char;
     const string &tda = token_delims[0];
     const string & tdb = token_delims[1];
 
-    string param_title = param_name;
+   
     found = false;
 
 
@@ -1526,8 +1712,13 @@ bool TemplateNestClass::token_regex(const string& param_name, const string& text
         if (text.substr(p3, tdb.size()) != tdb)
             return true;
 
-        if (text.substr(p, p2 - p) != param_name && !param_name.empty())
+
+        param_name = text.substr(p, p2 - p);
+       /* if (text.substr(p, p2 - p) != param_name && !param_name.empty())
+        {
             return true;
+        }*/
+
         p = p3 + tdb.size();
         found = true;
         return true;

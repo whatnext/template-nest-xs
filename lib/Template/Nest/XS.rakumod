@@ -32,11 +32,11 @@ class TemplateNestClass is repr('CPointer') { }
 sub templatenest_init(Pointer is rw) is native(get_dll_name) { * }
 
 #void templatenest_set_parameters(void* object, char* template_dir, char* template_ext, char* defaults_namespace_char, char** comment_delims,
-#	char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char);
+#	char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char,int64_t indexes );
 
 
 sub templatenest_set_parameters(Pointer $object,  Str $defaults, Str $template_dir, Str $template_ext,  Str $template_hash, Str $defaults_namespace_char, CArray[Str] $comment_delims,
-	CArray[Str] $token_delims, int64 $show_labels, Str $name_label, int64 $fixed_indent, int64 $die_on_bad_params, Str $escape_char) is native(get_dll_name) { * }
+	CArray[Str] $token_delims, int64 $show_labels, Str $name_label, int64 $fixed_indent, int64 $die_on_bad_params, Str $escape_char,int64 $indexes) is native(get_dll_name) { * }
 
 # void templatenest_render(void * object,char* data,char ** err)
 
@@ -51,7 +51,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 
-class Template::Nest::XS:ver<0.1.4> {
+class Template::Nest::XS:ver<0.1.5> {
     has Str $.template_dir is rw;
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
@@ -73,6 +73,8 @@ class Template::Nest::XS:ver<0.1.4> {
     has Bool $.die_on_bad_params is rw = False;
     has Char $.escape_char is rw = '\\';
 
+    has Bool $.indexes is rw = True;
+
     has Pointer $class_pointer = Pointer.new();
 
     submethod TWEAK(){
@@ -93,14 +95,18 @@ class Template::Nest::XS:ver<0.1.4> {
 	    @token_delims[1]  = $.token_delims[1];
 
 
-        templatenest_set_parameters($class_pointer, $(%.defaults).raku,$.template_dir, $.template_ext, $(%.template_hash).raku ,$.defaults_namespace_char, @comment_delims,
-	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char);
+ 
 
+        templatenest_set_parameters($class_pointer, $(%.defaults).raku,$.template_dir, $.template_ext, $(%.template_hash).raku ,$.defaults_namespace_char, @comment_delims,
+	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char,$.indexes);
+  
 
         my Pointer[Str] $html = Pointer[Str].new();
         my Pointer[Str] $err = Pointer[Str].new();
- 
+	
+  
         templatenest_render($class_pointer,$comp.raku,$html,$err);
+ 
 
 	    if $err.deref {
           die "there is an error in dynamic library:{$err.deref}";

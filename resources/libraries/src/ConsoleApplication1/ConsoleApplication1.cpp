@@ -100,6 +100,77 @@ void pythontestbadparams()
 
 }
 
+void rakuescapetest2()
+{
+
+
+    auto o = new TemplateNestClass();
+    string error;
+    o->template_dir = R"(D:\m\cpp\TemplateNest\template-nest-rakudl\t\templates\escapes.html)";
+    o->fixed_indent = false;
+    o->name_label = "NAME";
+    o->token_delims[0] = "<%";
+    o->token_delims[1] = "%>";
+    o->escape_char = '\\';
+   // o->defaults_namespace_char = '';
+    string data = R"(${:NAME("escapes"), :imnotescaped("2"), :neitherami("3")})";
+    o->die_on_bad_params = true;
+    defvaltype v = convert_jsontext(data.c_str(), error);
+    string rendered_script = o->rendertop(v);
+
+    std::cout << o->die << "\n";
+
+}
+
+void rakuescape5test()
+{
+   
+    auto o = new TemplateNestClass();
+    string error;
+    o->template_dir = R"(D:\m\cpp\TemplateNest\template-nest-rakudl\t\templates\)";
+    o->fixed_indent = false;
+    o->name_label = "NAME";
+    o->token_delims[0] = "<%";
+    o->token_delims[1] = "%>";
+    o->die_on_bad_params = true;
+    o->defaults_namespace_char = "";
+
+    o->escape_char = 'E';
+    string data2 = R"(${:NAME("escapes"), :imescaped("1"), :imnotescaped("2"), :neitherami("3")})";
+    defvaltype v2 = convert_text(data2.c_str(), error);
+    string rendered_script2 = o->rendertop(v2);
+
+
+    
+    // o->defaults_namespace_char = '';
+    string data = R"(${:NAME("escapes_e")})";
+   
+    defvaltype v = convert_text(data.c_str(), error);
+    string rendered_script = o->rendertop(v);
+
+    std::cout << rendered_script << ":" << o->die << "\n";
+
+}
+
+void raku01test()
+{
+
+    auto o = new TemplateNestClass();
+    string error;
+    o->template_dir = R"(D:\m\cpp\TemplateNest\template-nest-rakudl\t\templates\)";
+    o->fixed_indent = false;
+    o->name_label = "NAME";
+    o->token_delims[0] = "<!--%";
+    o->token_delims[1] = "%-->";
+    o->die_on_bad_params = true;
+    o->defaults_namespace_char = "";
+    string data2 = R"(${ :NAME("table"), :rows($[{:NAME("tr"), :cols(${:NAME("td")})}, {:NAME("tr"), :cols(${:NAME("td")})}]) })";
+    defvaltype v2 = convert_text(data2.c_str(), error);
+    string rendered_script2 = o->rendertop(v2);
+    std::cout << rendered_script2 << ":" << o->die << "\n";
+
+}
+
 void test()
 {
     /* my %table =
@@ -140,8 +211,16 @@ int main()
     //test();
    // jsontest();
     //pythonrender();
-    rendertest2();
+   // rendertest2();
+   // rakuescapetest2();
+   // rendertest1();
    // pythontestbadparams();
+
+
+    //rakuescape5test();
+
+
+    raku01test();
 }
 
 
