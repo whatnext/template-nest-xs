@@ -6,10 +6,11 @@ constant dl = 'TemplateNestDll.dll';
 
 sub get_dll_name()
 {
-   my $dir = %?RESOURCES<libraries/templatenest>.IO.dirname;
-  
-    return $dir.IO.add('templatenest');
-  #  return %?RESOURCES<libraries/templatenest>;
+
+
+     return %?RESOURCES<libraries/templatenest>;
+
+
 
      if $*VM.osname eq 'linux' {
         return 'templatenest';
@@ -51,7 +52,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 
-class Template::Nest::XS:ver<0.1.5> {
+class Template::Nest::XS:ver<0.1.6> {
     has Str $.template_dir is rw;
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
@@ -84,7 +85,7 @@ class Template::Nest::XS:ver<0.1.5> {
     }
 
     method render ( $comp ){
-
+  
 	
         my @comment_delims := CArray[Str].new;
 	    @comment_delims[0]  = $.comment_delims[0];
@@ -95,30 +96,28 @@ class Template::Nest::XS:ver<0.1.5> {
 	    @token_delims[1]  = $.token_delims[1];
 
 
- 
-
-        templatenest_set_parameters($class_pointer, $(%.defaults).raku,$.template_dir, $.template_ext, $(%.template_hash).raku ,$.defaults_namespace_char, @comment_delims,
+       templatenest_set_parameters($class_pointer, $(%.defaults).raku,$.template_dir, $.template_ext, $(%.template_hash).raku ,$.defaults_namespace_char, @comment_delims,
 	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char,$.indexes);
   
-
         my Pointer[Str] $html = Pointer[Str].new();
         my Pointer[Str] $err = Pointer[Str].new();
 	
-  
+ 
         templatenest_render($class_pointer,$comp.raku,$html,$err);
  
 
 	    if $err.deref {
           die "there is an error in dynamic library:{$err.deref}";
         }
-        #if !$html.deref || $html.deref=="" {
+       # if !$html.deref || $html.deref=="" {
            my Pointer[Str] $err2 = Pointer[Str].new();
            get_error($class_pointer,$err2);
            if ($err2.deref)
 	       {
 	          die "there is an error during execution:{$err2.deref}";
 	       }
-        #}
+      #  }
+
         return $html.deref;
     }
 
