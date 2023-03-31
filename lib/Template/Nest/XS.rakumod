@@ -1,6 +1,6 @@
 use v6;
 use NativeCall;
-
+use JSON::Fast;
 
 constant dl = 'TemplateNestDll.dll';
 
@@ -36,12 +36,12 @@ sub templatenest_init(Pointer is rw) is native(get_dll_name) { * }
 #	char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char,int64_t indexes );
 
 
-sub templatenest_set_parameters(Pointer $object,  Str $defaults, Str $template_dir, Str $template_ext,  Str $template_hash, Str $defaults_namespace_char, CArray[Str] $comment_delims,
+sub templatenest_set_jsonparameters(Pointer $object,  Str $defaults, Str $template_dir, Str $template_ext,  Str $template_hash, Str $defaults_namespace_char, CArray[Str] $comment_delims,
 	CArray[Str] $token_delims, int64 $show_labels, Str $name_label, int64 $fixed_indent, int64 $die_on_bad_params, Str $escape_char,int64 $indexes) is native(get_dll_name) { * }
 
 # void templatenest_render(void * object,char* data,char ** err)
 
-sub templatenest_render(Pointer,Str is encoded('utf8'),Pointer[Str] is rw  ,Pointer[Str] is rw   ) is native(get_dll_name) { * }
+sub templatenest_jsonrender(Pointer,Str is encoded('utf8'),Pointer[Str] is rw  ,Pointer[Str] is rw   ) is native(get_dll_name) { * }
 
 
 # void templatenest_destroy(void* object)
@@ -52,7 +52,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 
-class Template::Nest::XS:ver<0.1.6> {
+class Template::Nest::XS:ver<0.1.7> {
     has Str $.template_dir is rw;
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
@@ -96,14 +96,14 @@ class Template::Nest::XS:ver<0.1.6> {
 	    @token_delims[1]  = $.token_delims[1];
 
 
-       templatenest_set_parameters($class_pointer, $(%.defaults).raku,$.template_dir, $.template_ext, $(%.template_hash).raku ,$.defaults_namespace_char, @comment_delims,
+       templatenest_set_jsonparameters($class_pointer, to-json($(%.defaults)),$.template_dir, $.template_ext, to-json($(%.template_hash)) ,$.defaults_namespace_char, @comment_delims,
 	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char,$.indexes);
   
         my Pointer[Str] $html = Pointer[Str].new();
         my Pointer[Str] $err = Pointer[Str].new();
 	
  
-        templatenest_render($class_pointer,$comp.raku,$html,$err);
+        templatenest_jsonrender($class_pointer,to-json($comp),$html,$err);
  
 
 	    if $err.deref {
