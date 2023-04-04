@@ -81,7 +81,8 @@ class TemplateNestClass
 
     };
     struct location_info {
-
+        string file;
+        bool set = false;
         string escape_char;
         vector<vector<param_locations_type> > loc;
     };
@@ -96,6 +97,7 @@ class TemplateNestClass
 
 
     string get_template(string template_name);
+    void make_index();
     string fill_in(const string & template_name, const string& template1, const unordered_map<string, string> & params);
     vector<string> params(string template_name);
     vector<string> params_in(string text);

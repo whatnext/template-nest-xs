@@ -752,7 +752,19 @@ string TemplateNestClass::get_template(string template_name) {
         try {
             defvaltype v = (*template_hash.level).at(template_name);
             if (v.array == nullptr && v.level == nullptr)
+            {
                 template1 = v.val;
+                auto iter = param_locations.find(template_name);
+                if (iter != param_locations.end())
+                {
+                    if (template1 != iter->second.file)
+                    {
+                        iter->second.set = false; // invalidate index
+                        iter->second.file = template1;
+                        iter->second.loc.clear();
+                    }
+                }
+            }
         }
         catch (std::out_of_range& r)
         {
@@ -767,6 +779,10 @@ string TemplateNestClass::get_template(string template_name) {
        
         string filename = p.string();
         // + template_ext
+
+        auto iter = param_locations.find(template_name);
+        if (iter == param_locations.end() )
+        {
 
         //template = slurp $filename;
         std::ifstream t(filename);
@@ -788,6 +804,13 @@ string TemplateNestClass::get_template(string template_name) {
         std::stringstream buffer;
         buffer << t.rdbuf();
         template1 = buffer.str();
+            param_locations[template_name] = location_info();
+            param_locations[template_name].file = template1;
+        }
+        else
+        {
+            template1 = iter->second.file;
+        }
 
     }
 
@@ -1099,6 +1122,84 @@ string join(const vector<string>& s, const string& del)
 
 }
 
+/*#ifdef __linux__
+
+#else
+    #include <windows.h>
+    #include <tchar.h>
+    #include <stdio.h>
+#endif*/
+
+
+void TemplateNestClass::make_index()
+{
+
+
+
+
+    for (std::filesystem::directory_iterator next(template_dir), end; next != end; ++next)
+    {
+        string name = next->path().stem().string();
+        string cext = next->path().extension().string();
+        string esc = escape_char;
+
+        param_locations.clear();
+        
+        if (cext == template_ext) // filename.substr(filename.size()-ext.size())
+        { 
+            vector<string> frags;
+
+
+            string template1 = get_template(name);
+
+            if (!esc.empty()) {
+                frags = split(template1, esc + esc);
+
+            }
+            else {
+                frags.push_back(template1);
+
+            }
+
+            int i = 0;
+    
+            location_info& locations = param_locations[name];
+            locations.escape_char = esc;
+            locations.set = true;
+
+            for (auto& f : frags) {
+                vector<param_locations_type> locationsinfrag;
+
+                size_t p = 0;
+                while (f.size() > p)
+                {
+                    bool found;
+                    size_t p0;
+                    string param_name_found;
+                    if (!token_regex(param_name_found, f, p0, p, false, found))
+                        break;
+                    if (found)
+                    {
+                        param_locations_type l;
+                        l.p0 = p0;
+                        l.p = p;
+                        l.name = std::move(param_name_found);
+
+                        locationsinfrag.push_back(l);
+                    }
+                }
+
+
+
+                locations.loc.push_back(std::move(locationsinfrag));
+                i++;
+
+            }
+
+        }
+    }
+
+}
 
 string TemplateNestClass::fill_in(const string & template_name, const string & template1, const unordered_map<string,string> & params) {
 
@@ -1135,13 +1236,22 @@ string TemplateNestClass::fill_in(const string & template_name, const string & t
 
         auto iter = param_locations.find(template_name);
 
-        if (iter == param_locations.end() || ! indexes  || iter->second.escape_char != esc)
+        if (iter == param_locations.end() || !iter->second.set || ! indexes  || iter->second.escape_char != esc)
         {
             int i = 0;
-            
+            if (iter == param_locations.end())
+                param_locations[template_name] = location_info();
+            else if (iter->second.escape_char != esc)
+            {
+                string f = param_locations[template_name].file;
             param_locations[template_name] = location_info();
+                param_locations[template_name].file = f;
+            }
+            else
+                iter->second.loc.clear();
             location_info & locations = param_locations[template_name];
             locations.escape_char = esc;
+            locations.set = true;
            
             for (auto& f : frags) {
                 vector<param_locations_type> locationsinfrag;

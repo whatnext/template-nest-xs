@@ -40,7 +40,7 @@
 	  has Pointer $class_pointer = Pointer.new();*/
 	
 	  void templatenest_set_parameters(void* object, char * defaults, char * template_dir,char * template_ext, char* template_hash, char * defaults_namespace_char,char** comment_delims,
-		   char** token_delims,int64_t show_labels, char * name_label, int64_t fixed_indent, int64_t die_on_bad_params, char * escape_char, int64_t indexes)
+		   char** token_delims,int64_t show_labels, char * name_label, int64_t fixed_indent, int64_t die_on_bad_params, char * escape_char,  int64_t preindex,int64_t indexes)
 		  
 	  {
 	  TemplateNestClass & c = *((TemplateNestClass*)object);
@@ -67,11 +67,25 @@
 	  c.die_on_bad_params = die_on_bad_params;
 	  c.escape_char = escape_char;
 	  c.indexes = indexes;
+	  if (preindex)
+	  {
+		  ((TemplateNestClass*)object)->make_index();
 	  }
 
 
+	  }
+
+	  /*void templatenest_make_index(void* object)
+	  {
+		  TemplateNestClass& c = *((TemplateNestClass*)object);
+		  c.make_index();
+
+
+	  }*/
+
+
 	  void templatenest_set_jsonparameters(void* object, char* defaults, char* template_dir, char* template_ext, char * template_hash,char* defaults_namespace_char, char** comment_delims,
-		  char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char, int64_t indexes)
+		  char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char,  int64_t preindex,int64_t indexes)
 
 	  {
 		  TemplateNestClass& c = *((TemplateNestClass*)object);
@@ -99,12 +113,17 @@
 		  c.die_on_bad_params = die_on_bad_params;
 		  c.escape_char = escape_char;
 		  c.indexes = indexes;
+		  if (preindex)
+		  {
+			  ((TemplateNestClass*)object)->make_index();
+		  }
 
 	  }
 	  
 void templatenest_render(void* object,char* data,char ** output,char ** err)
 {
 	string error;
+	
 	defvaltype v = convert_text(data, error);
 	((TemplateNestClass*)object)->conv_error = error;
 	*err = (char*)((TemplateNestClass*)object)->conv_error.c_str();

@@ -27,11 +27,13 @@ my $nest = Template::Nest::XS.new(
 fixed_indent => True,
 name_label => "NAME"
 );
-#say "here";
+say "here";
+
+ $nest.make_index();
 my $result= $nest.render( $page );
 say $result;
 ok  ($result~~rx:s/First nested box/).so,"example page rendering ok";
-#say "here1";
+say "here1";
 
 
 

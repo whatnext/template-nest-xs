@@ -32,12 +32,15 @@ class TemplateNestClass is repr('CPointer') { }
 # templatenest_init(void** object)
 sub templatenest_init(Pointer is rw) is native(get_dll_name) { * }
 
+
+sub templatenest_make_index(Pointer is rw) is native(get_dll_name) { * }
+
 #void templatenest_set_parameters(void* object, char* template_dir, char* template_ext, char* defaults_namespace_char, char** comment_delims,
 #	char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char,int64_t indexes );
 
 
 sub templatenest_set_jsonparameters(Pointer $object,  Str $defaults, Str $template_dir, Str $template_ext,  Str $template_hash, Str $defaults_namespace_char, CArray[Str] $comment_delims,
-	CArray[Str] $token_delims, int64 $show_labels, Str $name_label, int64 $fixed_indent, int64 $die_on_bad_params, Str $escape_char,int64 $indexes) is native(get_dll_name) { * }
+	CArray[Str] $token_delims, int64 $show_labels, Str $name_label, int64 $fixed_indent, int64 $die_on_bad_params, Str $escape_char,int64 $preindex,int64 $indexes) is native(get_dll_name) { * }
 
 # void templatenest_render(void * object,char* data,char ** err)
 
@@ -52,7 +55,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 
-class Template::Nest::XS:ver<0.1.7> {
+class Template::Nest::XS:ver<0.1.8> {
     has Str $.template_dir is rw;
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
@@ -74,6 +77,8 @@ class Template::Nest::XS:ver<0.1.7> {
     has Bool $.die_on_bad_params is rw = False;
     has Char $.escape_char is rw = '\\';
 
+    has Bool $.preindex is rw = True;
+
     has Bool $.indexes is rw = True;
 
     has Pointer $class_pointer = Pointer.new();
@@ -82,7 +87,38 @@ class Template::Nest::XS:ver<0.1.7> {
         self.comment_delims = @comment_delims_defaults unless grep {$_}, @!comment_delims;
         self.token_delims = @token_delims_defaults unless grep {$_}, @!token_delims;
         templatenest_init($class_pointer);
+
+ 	my @comment_delims := CArray[Str].new;
+	    @comment_delims[0]  = @!comment_delims[0];
+	    @comment_delims[1]  = @!comment_delims[1];
+
+        my @token_delims := CArray[Str].new;
+	    @token_delims[0]  = @!token_delims[0];
+	    @token_delims[1]  = @!token_delims[1];
+
+
+	templatenest_set_jsonparameters($class_pointer, to-json($(%!defaults)),$!template_dir, $!template_ext, to-json($(%!template_hash)) ,$!defaults_namespace_char, @comment_delims,
+	        $@token_delims, $!show_labels, $!name_label, $!fixed_indent, $!die_on_bad_params, $!escape_char,$!preindex ,$!indexes);
     }
+
+    method make_index() {
+       my @comment_delims := CArray[Str].new;
+	    @comment_delims[0]  = $.comment_delims[0];
+	    @comment_delims[1]  = $.comment_delims[1];
+
+        my @token_delims := CArray[Str].new;
+	    @token_delims[0]  = $.token_delims[0];
+	    @token_delims[1]  = $.token_delims[1];
+
+
+ 
+       templatenest_set_jsonparameters($class_pointer, to-json($(%.defaults)),$.template_dir, $.template_ext, to-json($(%.template_hash)) ,$.defaults_namespace_char, @comment_delims,
+	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char,True,$.indexes);
+
+
+	#templatenest_make_index($class_pointer);
+
+   }
 
     method render ( $comp ){
   
@@ -96,8 +132,9 @@ class Template::Nest::XS:ver<0.1.7> {
 	    @token_delims[1]  = $.token_delims[1];
 
 
+ 
        templatenest_set_jsonparameters($class_pointer, to-json($(%.defaults)),$.template_dir, $.template_ext, to-json($(%.template_hash)) ,$.defaults_namespace_char, @comment_delims,
-	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char,$.indexes);
+	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char,False,$.indexes);
   
         my Pointer[Str] $html = Pointer[Str].new();
         my Pointer[Str] $err = Pointer[Str].new();

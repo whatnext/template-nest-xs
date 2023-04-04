@@ -1,7 +1,7 @@
 {
     "name": "Template::Nest::XS",
     "auth" : "zef:jaffa4",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "license" : "ISC",
     "description": "Manipulate a generic template structure via a Raku hash",
     "perl": "6.d",
@@ -14,5 +14,8 @@
     "tags": [
         "Nest", "Template"
     ],
-    "source-url" : "https://github.com/whatnext/template-nest-xs"
+    "source-url" : "https://github.com/whatnext/template-nest-xs",
+    "depends": [
+    "JSON::Fast"
+     ]
 }
