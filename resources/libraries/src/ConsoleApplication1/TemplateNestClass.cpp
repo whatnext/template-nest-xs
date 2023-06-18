@@ -47,7 +47,11 @@ struct JsonHandler {
 
     bool HandleValue(const string& val)
     {
-       
+        if (stack.size() == 0)
+        {
+            root.val = val;
+        }
+        else
         if (stack.back() == array)
         {
             defvaltype v;

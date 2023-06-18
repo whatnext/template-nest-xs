@@ -56,7 +56,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 class Template::Nest::XS:ver<0.1.8> {
-    has Str $.template_dir is rw;
+    has Str $.template_dir is rw = '';
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
     has %.defaults is rw;
@@ -65,10 +65,10 @@ class Template::Nest::XS:ver<0.1.8> {
 
     has Char $.defaults_namespace_char is rw = '.';
 
-    my @comment_delims_defaults[2] = '<!--', '-->';
+    my @comment_delims_defaults = '<!--', '-->';
     has Str @.comment_delims[2] is rw;
 
-    my @token_delims_defaults[2] = '<%', '%>';
+    my @token_delims_defaults = '<%', '%>';
     has Str @.token_delims[2] is rw;
 
     has Bool $.show_labels is rw = False;
@@ -84,10 +84,12 @@ class Template::Nest::XS:ver<0.1.8> {
     has Pointer $class_pointer = Pointer.new();
 
     submethod TWEAK(){
+       
         self.comment_delims = @comment_delims_defaults unless grep {$_}, @!comment_delims;
         self.token_delims = @token_delims_defaults unless grep {$_}, @!token_delims;
+       
         templatenest_init($class_pointer);
-
+       
  	my @comment_delims := CArray[Str].new;
 	    @comment_delims[0]  = @!comment_delims[0];
 	    @comment_delims[1]  = @!comment_delims[1];
@@ -96,9 +98,13 @@ class Template::Nest::XS:ver<0.1.8> {
 	    @token_delims[0]  = @!token_delims[0];
 	    @token_delims[1]  = @!token_delims[1];
 
+      
 
+       
 	templatenest_set_jsonparameters($class_pointer, to-json($(%!defaults)),$!template_dir, $!template_ext, to-json($(%!template_hash)) ,$!defaults_namespace_char, @comment_delims,
 	        $@token_delims, $!show_labels, $!name_label, $!fixed_indent, $!die_on_bad_params, $!escape_char,$!preindex ,$!indexes);
+
+    
     }
 
     method make_index() {
@@ -122,7 +128,7 @@ class Template::Nest::XS:ver<0.1.8> {
 
     method render ( $comp ){
   
-	
+  
         my @comment_delims := CArray[Str].new;
 	    @comment_delims[0]  = $.comment_delims[0];
 	    @comment_delims[1]  = $.comment_delims[1];
@@ -136,12 +142,13 @@ class Template::Nest::XS:ver<0.1.8> {
        templatenest_set_jsonparameters($class_pointer, to-json($(%.defaults)),$.template_dir, $.template_ext, to-json($(%.template_hash)) ,$.defaults_namespace_char, @comment_delims,
 	        $@token_delims, $.show_labels, $.name_label, $.fixed_indent, $.die_on_bad_params, $.escape_char,False,$.indexes);
   
+  
         my Pointer[Str] $html = Pointer[Str].new();
         my Pointer[Str] $err = Pointer[Str].new();
 	
  
         templatenest_jsonrender($class_pointer,to-json($comp),$html,$err);
- 
+	
 
 	    if $err.deref {
           die "there is an error in dynamic library:{$err.deref}";
