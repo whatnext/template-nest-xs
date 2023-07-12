@@ -28,5 +28,8 @@ extern  "C"  TEMPLATENEST_API  void templatenest_set_jsonparameters(void* object
 
 extern "C" TEMPLATENEST_API void templatenest_render(void* object, char* data, char** output, char** err);
 extern "C" TEMPLATENEST_API void templatenest_jsonrender(void* object, char* data, char** output, char** err);
+
+extern "C" TEMPLATENEST_API void templatenest_makeindex(void* object);
+extern "C" TEMPLATENEST_API void templatenest_makeindexbyname(void* object, char*name);
 extern "C" TEMPLATENEST_API void templatenest_destroy(void* object);
 extern "C" TEMPLATENEST_API void get_error(void* object,  char** text);

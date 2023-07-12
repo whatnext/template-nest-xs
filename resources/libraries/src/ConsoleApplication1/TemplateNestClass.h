@@ -98,6 +98,7 @@ class TemplateNestClass
 
     string get_template(string template_name);
     void make_index();
+    void make_index(string filename);
     string fill_in(const string & template_name, const string& template1, const unordered_map<string, string> & params);
     vector<string> params(string template_name);
     vector<string> params_in(string text);

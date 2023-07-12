@@ -30,6 +30,7 @@ name_label => "NAME"
 say "here";
 
  $nest.make_index();
+$nest.make_index_by_name('page',);
 my $result= $nest.render( $page );
 say $result;
 ok  ($result~~rx:s/First nested box/).so,"example page rendering ok";

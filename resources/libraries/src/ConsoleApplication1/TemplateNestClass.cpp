@@ -1135,25 +1135,12 @@ string join(const vector<string>& s, const string& del)
 #endif*/
 
 
-void TemplateNestClass::make_index()
-{
-
-
-
-
-    for (std::filesystem::directory_iterator next(template_dir), end; next != end; ++next)
+void TemplateNestClass::make_index(string name)
     {
-        string name = next->path().stem().string();
-        string cext = next->path().extension().string();
         string esc = escape_char;
-
-        param_locations.clear();
-        
-        if (cext == template_ext) // filename.substr(filename.size()-ext.size())
-        { 
             vector<string> frags;
 
-
+    param_locations.erase(name);
             string template1 = get_template(name);
 
             if (!esc.empty()) {
@@ -1199,6 +1186,26 @@ void TemplateNestClass::make_index()
                 i++;
 
             }
+
+        }
+
+void TemplateNestClass::make_index()
+{
+
+
+
+
+    for (std::filesystem::directory_iterator next(template_dir), end; next != end; ++next)
+    {
+        string name = next->path().stem().string();
+        string cext = next->path().extension().string();
+       
+
+        param_locations.clear();
+        
+        if (cext == template_ext) // filename.substr(filename.size()-ext.size())
+        { 
+            make_index(name);
 
         }
     }

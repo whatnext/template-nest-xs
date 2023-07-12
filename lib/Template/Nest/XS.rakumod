@@ -33,7 +33,9 @@ class TemplateNestClass is repr('CPointer') { }
 sub templatenest_init(Pointer is rw) is native(get_dll_name) { * }
 
 
-sub templatenest_make_index(Pointer is rw) is native(get_dll_name) { * }
+#sub templatenest_makeindex(Pointer) is native(get_dll_name) { * }
+
+sub templatenest_makeindexbyname(Pointer,Str $defaults) is native(get_dll_name) { * }
 
 #void templatenest_set_parameters(void* object, char* template_dir, char* template_ext, char* defaults_namespace_char, char** comment_delims,
 #	char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char,int64_t indexes );
@@ -55,7 +57,7 @@ sub  get_error(Pointer,Pointer[Str] is rw) is native(get_dll_name) { * }
 
 
 
-class Template::Nest::XS:ver<0.1.9> {
+class Template::Nest::XS:ver<0.1.10> {
     has Str $.template_dir is rw = '';
     has Str $.template_ext is rw = '.html';
     has %.template_hash is rw;
@@ -124,6 +126,12 @@ class Template::Nest::XS:ver<0.1.9> {
 
 	#templatenest_make_index($class_pointer);
 
+   }
+
+   method make_index_by_name($name) {
+
+     templatenest_makeindexbyname($class_pointer,$name);
+	
    }
 
     method render ( $comp ){

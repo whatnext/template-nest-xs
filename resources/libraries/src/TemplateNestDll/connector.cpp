@@ -88,8 +88,10 @@
 		  char** token_delims, int64_t show_labels, char* name_label, int64_t fixed_indent, int64_t die_on_bad_params, char* escape_char,  int64_t preindex,int64_t indexes)
 
 	  {
+		 
 		  TemplateNestClass& c = *((TemplateNestClass*)object);
 		  string error;
+		 
 		  defvaltype v = convert_jsontext(defaults, error);
 		  ((TemplateNestClass*)object)->conv_error = error;
 		  c.defaults = v;
@@ -100,19 +102,26 @@
 
 
 		  c.template_dir = template_dir;
+		 
 		  c.template_ext = template_ext;
+		  
 		  c.defaults_namespace_char = defaults_namespace_char;
 
 		  c.comment_delims[0] = comment_delims[0];
+		 
 		  c.comment_delims[1] = comment_delims[1];
+		  
 		  c.token_delims[0] = token_delims[0];
+		  
 		  c.token_delims[1] = token_delims[1];
+		 
 		  c.show_labels = show_labels;
 		  c.name_label = name_label;
 		  c.fixed_indent = fixed_indent;
 		  c.die_on_bad_params = die_on_bad_params;
 		  c.escape_char = escape_char;
 		  c.indexes = indexes;
+		 
 		  if (preindex)
 		  {
 			  ((TemplateNestClass*)object)->make_index();
@@ -138,6 +147,20 @@ void templatenest_render(void* object,char* data,char ** output,char ** err)
 	*err = (char*)((TemplateNestClass*)object)->die.c_str();
 	*output = (char*)((TemplateNestClass*)object)->output.c_str();
 }
+
+
+void templatenest_makeindex(void* object)
+{
+	((TemplateNestClass*)object)->make_index();
+}
+
+
+void templatenest_makeindexbyname(void* object,char * name)
+{
+	((TemplateNestClass*)object)->make_index(name);
+
+}
+
 
 void templatenest_jsonrender(void* object, char* data, char** output, char** err)
 {
